@@ -1,6 +1,7 @@
 from cryptography.fernet import Fernet
+from app.core.config import SECRET_KEY
 
-SECRET_KEY = Fernet.generate_key()
+
 fernet = Fernet(SECRET_KEY)
 
 
