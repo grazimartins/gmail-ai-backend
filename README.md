@@ -2,7 +2,7 @@
 
 Backend desenvolvido com FastAPI para gerenciamento de agentes de IA integrados ao Gmail.
 
-O sistema permite registrar agentes, autenticar contas Gmail via OAuth2, ler emails, enviar mensagens, gerar resumos automáticos com IA e responder emails automaticamente utilizando OpenAI.
+O sistema permite registrar agentes com credenciais Gmail de forma segura, realizar leitura de emails, envio de mensagens, respostas automáticas com IA e resumos automáticos utilizando OpenAI.
 
 ---
 
@@ -20,17 +20,38 @@ O sistema permite registrar agentes, autenticar contas Gmail via OAuth2, ler ema
 
 ---
 
-## Entregável 2 — Automação Inteligente de Emails
+## Entregável 2 — Ações Automatizadas com IA
 
-- Integração com Gmail API
-- Leitura de emails da caixa de entrada
-- Envio de emails
-- Resumo automático de emails com IA
-- Encaminhamento de resumos
-- Respostas automáticas inteligentes
-- Integração com OpenAI
-- OAuth2 Google
-- Processamento automatizado de emails
+### Resumo Automático e Encaminhamento
+
+- Leitura de emails Gmail
+- Geração de resumo utilizando OpenAI
+- Encaminhamento automático do resumo por email
+
+### Resposta Automática Inteligente
+
+- Leitura de emails recebidos
+- Geração automática de resposta utilizando IA
+- Envio automático de resposta ao remetente original
+
+---
+
+## Entregável 3 — Gerenciamento de Emails
+
+### Leitura de Emails
+
+- Recuperação dos emails mais recentes
+- Retorno com:
+  - remetente
+  - assunto
+  - conteúdo
+- Limite configurável de emails
+
+### Envio de Emails
+
+- Envio simples de emails
+- Validação dos campos de entrada
+- Integração completa com Gmail API
 
 ---
 
@@ -44,7 +65,8 @@ O sistema permite registrar agentes, autenticar contas Gmail via OAuth2, ler ema
 - Pydantic
 - OpenAI API
 - Gmail API
-- OAuth2 Google
+- Google OAuth2
+- google-api-python-client
 - Cryptography (Fernet)
 - Render
 
@@ -61,52 +83,94 @@ gmail-ai-backend/
 │   ├── routes/
 │   ├── schemas/
 │   ├── services/
+│   ├── utils/
 │   └── main.py
 │
 ├── requirements.txt
+├── runtime.txt
 ├── .env.example
-└── README.mdgit add .
+└── README.md
 ```
 
 ---
 
 # Arquitetura
 
-O projeto utiliza arquitetura em camadas:
+O projeto utiliza arquitetura modular baseada em separação de responsabilidades:
 
 ```text
 Routes
 ↓
 Services
 ↓
-Database Layer
+Utils
 ↓
-PostgreSQL
+Database / External APIs
 ```
 
 Separando:
 - regras de negócio
-- integração com APIs externas
 - persistência
 - validações
 - segurança
+- integrações externas
 - rotas HTTP
 
 ---
 
-# Funcionalidades da API
+# Endpoints Disponíveis
+
+## Health Check
+
+```http
+GET /health
+```
+
+---
 
 ## Registro de Agente
-
-Endpoint responsável por cadastrar agentes de IA.
-
-### Endpoint
 
 ```http
 POST /agents
 ```
 
-### Exemplo de Request
+---
+
+## Ler Emails Recentes
+
+```http
+GET /emails/latest/{agent_id}?limit=10
+```
+
+---
+
+## Enviar Email
+
+```http
+POST /emails/send
+```
+
+---
+
+## Resumir e Encaminhar Email
+
+```http
+POST /emails/summarize-and-forward
+```
+
+---
+
+## Resposta Automática com IA
+
+```http
+POST /emails/auto-reply
+```
+
+---
+
+# Exemplo — Registro de Agente
+
+## Request
 
 ```json
 {
@@ -118,7 +182,9 @@ POST /agents
 }
 ```
 
-### Exemplo de Response
+---
+
+## Response
 
 ```json
 {
@@ -131,73 +197,27 @@ POST /agents
 
 ---
 
-## Ler Emails
+# Exemplo — Enviar Email
 
-### Endpoint
-
-```http
-GET /emails/latest/{agent_id}
-```
-
-Retorna os emails mais recentes da caixa de entrada.
-
----
-
-## Enviar Email
-
-### Endpoint
-
-```http
-POST /emails/send
-```
-
-### Exemplo de Request
+## Request
 
 ```json
 {
   "agent_id": 1,
-  "receiver": "user@email.com",
+  "receiver": "client@email.com",
   "subject": "Teste",
-  "body": "Mensagem enviada pelo sistema."
+  "body": "Mensagem enviada pela API"
 }
 ```
 
 ---
 
-## Resumir e Encaminhar Email com IA
-
-### Endpoint
-
-```http
-POST /emails/summarize-and-forward
-```
-
-### Exemplo de Request
+## Response
 
 ```json
 {
-  "agent_id": 1,
-  "message_id": "MESSAGE_ID",
-  "forward_to": "manager@email.com"
-}
-```
-
----
-
-## Resposta Automática com IA
-
-### Endpoint
-
-```http
-POST /emails/auto-reply
-```
-
-### Exemplo de Request
-
-```json
-{
-  "agent_id": 1,
-  "message_id": "MESSAGE_ID"
+  "message_id": "19e3301269768159",
+  "status": "Email sent successfully"
 }
 ```
 
@@ -216,7 +236,6 @@ Fernet
 ```
 
 da biblioteca:
-
 - Cryptography
 
 ---
@@ -338,32 +357,40 @@ uvicorn app.main:app --reload
 
 # Documentação Swagger
 
+## Local
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
 ## Produção
 
-:contentReference[oaicite:0]{index=0}
+```text
+https://gmail-ai-backend-vvtu.onrender.com/docs
+```
 
 ---
 
 # Deploy Produção
 
 Deploy realizado utilizando:
-
 - Render
 - Neon PostgreSQL
 
 ---
 
-# Próximos Passos
+# Próximas Melhorias
 
 - Background tasks
-- Processamento assíncrono
-- Filas com Celery/RabbitMQ
+- Scheduler para leitura automática inbox
 - Logs estruturados
-- Monitoramento
-- Dockerização completa
 - Testes automatizados
-- Clean Architecture
-- Deploy CI/CD
+- Dockerização completa
+- Redis/Celery
+- Monitoramento de emails em tempo real
+- Classificação automática de emails com IA
 
 ---
 

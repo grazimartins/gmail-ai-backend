@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db
-from app.db.models import Agent
 from app.utils.agent_utils import get_agent_or_404
 
 from app.schemas.email import (
+    SendEmailRequest,
+    SendEmailResponse,
     LatestEmailsResponse,
     SummarizeAndForwardResponse,
     SummarizeAndForwardRequest,
@@ -22,11 +23,38 @@ router = APIRouter(
     tags=["Emails"]
 )
 
+@router.post(
+    "/send",
+    response_model=SendEmailResponse,
+    status_code=201
+)
+def send_email(
+    request: SendEmailRequest,
+    db: Session = Depends(get_db)
+):
+
+    agent = get_agent_or_404(
+        db,
+        request.agent_id
+    )
+
+    result = GmailService.send_email(
+        agent=agent,
+        receiver=request.receiver,
+        subject=request.subject,
+        body=request.body
+    )
+
+    return {
+        "message_id": result["message_id"],
+        "status": "Email sent successfully"
+    }
+
 
 @router.get("/latest/{agent_id}", response_model=LatestEmailsResponse)
 def get_latest_emails(
     agent_id: int, 
-    limit: int = 10,
+    limit: int = Query(default=10, le=50),
     db: Session = Depends(get_db)
 ):
 
@@ -46,7 +74,8 @@ def get_latest_emails(
 
 @router.post(
         "/summarize-and-forward", 
-        response_model=SummarizeAndForwardResponse
+        response_model=SummarizeAndForwardResponse,
+        status_code=200
 )
 def summarize_and_forward(
     request: SummarizeAndForwardRequest,
@@ -83,8 +112,8 @@ def summarize_and_forward(
 
 @router.post(
         "/auto-reply",  
-        response_model= AutoReplyResponse,
-        status_code=201
+        response_model=AutoReplyResponse,
+        status_code=200
 )
 def auto_reply(
     request: AutoReplyRequest,
