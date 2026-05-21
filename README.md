@@ -2,7 +2,7 @@
 
 Backend desenvolvido com FastAPI para gerenciamento de agentes de IA integrados ao Gmail.
 
-O sistema permite registrar agentes com credenciais Gmail de forma segura, utilizando criptografia para armazenamento de informações sensíveis.
+O sistema permite registrar agentes, autenticar contas Gmail via OAuth2, ler emails, enviar mensagens, gerar resumos automáticos com IA e responder emails automaticamente utilizando OpenAI.
 
 ---
 
@@ -20,6 +20,20 @@ O sistema permite registrar agentes com credenciais Gmail de forma segura, utili
 
 ---
 
+## Entregável 2 — Automação Inteligente de Emails
+
+- Integração com Gmail API
+- Leitura de emails da caixa de entrada
+- Envio de emails
+- Resumo automático de emails com IA
+- Encaminhamento de resumos
+- Respostas automáticas inteligentes
+- Integração com OpenAI
+- OAuth2 Google
+- Processamento automatizado de emails
+
+---
+
 # Tecnologias Utilizadas
 
 - Python
@@ -28,6 +42,9 @@ O sistema permite registrar agentes com credenciais Gmail de forma segura, utili
 - Neon PostgreSQL
 - SQLAlchemy
 - Pydantic
+- OpenAI API
+- Gmail API
+- OAuth2 Google
 - Cryptography (Fernet)
 - Render
 
@@ -41,11 +58,12 @@ gmail-ai-backend/
 ├── app/
 │   ├── core/
 │   ├── db/
+│   ├── models/
 │   ├── routes/
 │   ├── schemas/
+│   ├── services/
 │   └── main.py
 │
-├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -58,17 +76,18 @@ gmail-ai-backend/
 O projeto utiliza arquitetura em camadas:
 
 ```text
-Route
+Routes
 ↓
-Service
+Services
 ↓
-Repository
+Database Layer
 ↓
-Database
+PostgreSQL
 ```
 
 Separando:
 - regras de negócio
+- integração com APIs externas
 - persistência
 - validações
 - segurança
@@ -76,7 +95,7 @@ Separando:
 
 ---
 
-# Funcionalidade Atual
+# Funcionalidades da API
 
 ## Registro de Agente
 
@@ -88,9 +107,7 @@ Endpoint responsável por cadastrar agentes de IA.
 POST /agents
 ```
 
----
-
-# Exemplo de Request
+### Exemplo de Request
 
 ```json
 {
@@ -102,9 +119,7 @@ POST /agents
 }
 ```
 
----
-
-# Exemplo de Response
+### Exemplo de Response
 
 ```json
 {
@@ -112,6 +127,78 @@ POST /agents
   "name": "Agente Financeiro",
   "email_gmail": "agent@gmail.com",
   "message": "Agent created successfully"
+}
+```
+
+---
+
+## Ler Emails
+
+### Endpoint
+
+```http
+GET /emails/latest/{agent_id}
+```
+
+Retorna os emails mais recentes da caixa de entrada.
+
+---
+
+## Enviar Email
+
+### Endpoint
+
+```http
+POST /emails/send
+```
+
+### Exemplo de Request
+
+```json
+{
+  "agent_id": 1,
+  "receiver": "user@email.com",
+  "subject": "Teste",
+  "body": "Mensagem enviada pelo sistema."
+}
+```
+
+---
+
+## Resumir e Encaminhar Email com IA
+
+### Endpoint
+
+```http
+POST /emails/summarize-and-forward
+```
+
+### Exemplo de Request
+
+```json
+{
+  "agent_id": 1,
+  "message_id": "MESSAGE_ID",
+  "forward_to": "manager@email.com"
+}
+```
+
+---
+
+## Resposta Automática com IA
+
+### Endpoint
+
+```http
+POST /emails/auto-reply
+```
+
+### Exemplo de Request
+
+```json
+{
+  "agent_id": 1,
+  "message_id": "MESSAGE_ID"
 }
 ```
 
@@ -182,7 +269,7 @@ git clone https://github.com/grazimartins/gmail-ai-backend.git
 
 ```bash
 python -m venv venv
-venv\\Scripts\\activate
+venv\Scripts\activate
 ```
 
 ### Linux/Mac
@@ -224,6 +311,8 @@ Baseado em:
 DATABASE_URL=YOUR_DATABASE_URL
 
 SECRET_KEY=YOUR_SECRET_KEY
+
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 ```
 
 ---
@@ -250,11 +339,9 @@ uvicorn app.main:app --reload
 
 # Documentação Swagger
 
-Após iniciar a aplicação:
+## Produção
 
-```text
-http://localhost:8000/docs
-```
+:contentReference[oaicite:0]{index=0}
 
 ---
 
@@ -267,21 +354,17 @@ Deploy realizado utilizando:
 
 ---
 
-## Documentação da API
+# Próximos Passos
 
-https://gmail-ai-backend-vvtu.onrender.com/docs
----
-
-# Próximos Entregáveis
-
-- Leitura de emails Gmail
-- Envio de emails
-- Resumo automático com IA
-- Respostas automáticas inteligentes
-- Integração com LLMs
-- OAuth2 Google
 - Background tasks
+- Processamento assíncrono
+- Filas com Celery/RabbitMQ
+- Logs estruturados
+- Monitoramento
 - Dockerização completa
+- Testes automatizados
+- Clean Architecture
+- Deploy CI/CD
 
 ---
 
