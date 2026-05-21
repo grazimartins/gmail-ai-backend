@@ -1,18 +1,12 @@
-from typing import List
-
-from email.mime.text import MIMEText
-from base64 import urlsafe_b64encode
-from googleapiclient.errors import HttpError
-
-import re 
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db
 from app.db.models import Agent
+from app.utils.agent_utils import get_agent_or_404
 
 from app.schemas.email import (
+    LatestEmailsResponse,
     SummarizeAndForwardResponse,
     SummarizeAndForwardRequest,
     AutoReplyRequest,
@@ -29,83 +23,40 @@ router = APIRouter(
 )
 
 
-@router.get("/latest/{agent_id}")
-def get_latest_emails(agent_id: int, db: Session = Depends(get_db)):
+@router.get("/latest/{agent_id}", response_model=LatestEmailsResponse)
+def get_latest_emails(
+    agent_id: int, 
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
 
-    agent = db.query(Agent).filter(
-        Agent.id == agent_id
-    ).first()
+    agent = get_agent_or_404(
+        db,
+        agent_id
+    ) 
 
-    if not agent:
-        raise HTTPException(
-            status_code=404,
-            detail="Agent not found"
-        )
+    emails = GmailService.list_recent_emails(agent=agent, limit=limit)
 
-    emails = GmailService.list_recent_emails(agent=agent)
+    return {
+        "total": len(emails),
+        "emails": emails
+    }
 
-    return emails
+ 
 
+@router.post(
+        "/summarize-and-forward", 
+        response_model=SummarizeAndForwardResponse
+)
+def summarize_and_forward(
+    request: SummarizeAndForwardRequest,
+    db: Session = Depends(get_db)
+):
 
-
-@staticmethod
-def clean_receiver(receiver: str) -> str:
-
-    if not receiver:
-        raise ValueError("Receiver is empty")
-
-    # remove quebra de linha e espaços
-    receiver = receiver.strip()
-
-    # extrai email se vier "Nome <email>"
-    match = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", receiver)
-
-    if match:
-        return match.group(0)
-
-    raise ValueError(f"Invalid email format: {receiver}")
-
-
-@staticmethod
-def send_email(agent, receiver: str, subject: str, body: str):
-
-    try:
-        service = GmailService.get_gmail_client(agent)
-
-        receiver = GmailService.clean_receiver(receiver)
-
-        body = GmailService.clean_email(body)
-
-        message = MIMEText(body, "plain", "utf-8")
-
-        message["To"] = receiver
-        message["Subject"] = subject.strip()
-
-        raw_message = urlsafe_b64encode(
-            message.as_bytes()
-        ).decode()
-
-        result = service.users().messages().send(
-            userId="me",
-            body={"raw": raw_message}
-        ).execute()
-
-        return {
-            "message_id": result["id"],
-            "status": "sent"
-        }
-
-    except HttpError as error:
-        raise Exception(f"Error sending email: {str(error)}")
-    
-
-@router.post("/summarize-and-forward")
-def summarize_and_forward(request: SummarizeAndForwardRequest,db: Session = Depends(get_db),
-                          response_model=SummarizeAndForwardResponse):
-
-    agent = db.query(Agent).filter(
-        Agent.id == request.agent_id
-    ).first()
+    agent = get_agent_or_404(
+        db,
+        request.agent_id
+    ) 
 
     email_data = GmailService.get_email_by_id(
         agent=agent,
@@ -130,13 +81,20 @@ def summarize_and_forward(request: SummarizeAndForwardRequest,db: Session = Depe
 
 
 
-@router.post("/auto-reply")
-def auto_reply(request: AutoReplyRequest,db: Session = Depends(get_db),
-               response_model= AutoReplyResponse):
+@router.post(
+        "/auto-reply",  
+        response_model= AutoReplyResponse,
+        status_code=201
+)
+def auto_reply(
+    request: AutoReplyRequest,
+    db: Session = Depends(get_db)
+):
 
-    agent = db.query(Agent).filter(
-        Agent.id == request.agent_id
-    ).first()
+    agent = get_agent_or_404(
+        db,
+        request.agent_id
+    )
 
     email_data = GmailService.get_email_by_id(
         agent=agent,
@@ -147,7 +105,7 @@ def auto_reply(request: AutoReplyRequest,db: Session = Depends(get_db),
 
     GmailService.send_email(
         agent=agent,
-        receiver=email_data["sender_email"],  # 👈 ISSO AQUI É O FIX
+        receiver=email_data["sender_email"],
         subject=f"Re: {email_data['subject']}",
         body=ai_reply
     )

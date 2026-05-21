@@ -58,7 +58,6 @@ gmail-ai-backend/
 ├── app/
 │   ├── core/
 │   ├── db/
-│   ├── models/
 │   ├── routes/
 │   ├── schemas/
 │   ├── services/
@@ -66,7 +65,7 @@ gmail-ai-backend/
 │
 ├── requirements.txt
 ├── .env.example
-└── README.md
+└── README.mdgit add .
 ```
 
 ---

@@ -9,7 +9,7 @@ from app.core.crypto import encrypt
 router = APIRouter()
 
 
-@router.post("/agents")
+@router.post("/agents", tags=["Agents"])
 def create_agent(payload: AgentCreate, db: Session = Depends(get_db)):
 
     agent = Agent(

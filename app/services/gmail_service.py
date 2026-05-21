@@ -103,13 +103,13 @@ class GmailService:
 
  
     @staticmethod
-    def list_recent_emails(agent, max_results: int = 5) -> List[Dict]:
+    def list_recent_emails(agent, limit: int = 5) -> List[Dict]:
 
         service = GmailService.get_gmail_client(agent)
 
         results = service.users().messages().list(
             userId="me",
-            maxResults=max_results
+            maxResults=limit
         ).execute()
 
         messages = results.get("messages", [])

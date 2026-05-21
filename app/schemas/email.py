@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-
+from typing import List
 
 class EmailResponse(BaseModel):
 
@@ -46,3 +46,9 @@ class AutoReplyResponse(BaseModel):
 
     status: str
     reply: str
+
+
+class LatestEmailsResponse(BaseModel):
+
+    total: int
+    emails: List[EmailResponse]
