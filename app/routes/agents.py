@@ -3,13 +3,17 @@ from sqlalchemy.orm import Session
 
 from app.db.deps import get_db
 from app.db.models import Agent
-from app.schemas.agent import AgentCreate
+from app.schemas.agent import AgentCreate, AgentResponse
 from app.core.crypto import encrypt
 
 router = APIRouter()
 
 
-@router.post("/agents", tags=["Agents"])
+@router.post(
+        "/agents", 
+        tags=["Agents"], 
+        response_model=AgentResponse,
+        status_code=201)
 def create_agent(payload: AgentCreate, db: Session = Depends(get_db)):
 
     agent = Agent(
